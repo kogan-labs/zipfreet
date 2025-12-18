@@ -14,5 +14,6 @@ Imports:
   tidyr,
   ggplot2,
   gganimate,
-  gifski
+  gifski,
+  lifecycle
 RoxygenNote: 7.3.2
