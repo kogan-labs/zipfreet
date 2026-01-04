@@ -1,6 +1,3 @@
-source("R/is_valid_length.R")
-source("R/prevpdf.R")
-
 #' Compute probability of disease freedom given samples taken per timestep
 #' 
 #' @param n number of samples taken per timestep

@@ -1,12 +1,9 @@
-library(R6)
-library(dplyr)
-library(ggplot2)
-library(gganimate)
-library(gifski)
-
-source("R/prevpdf.R")
-
-PrevPdfExt <- R6Class("PrevPdfExt",
+#' @importFrom R6 R6Class
+#' @importFrom dplyr bind_rows
+#' @importFrom ggplot2 ggplot aes geom_line
+#' @importFrom gganimate transition_time animate
+#' @importFrom gifski gifski_renderer
+PrevPdfExt <- R6::R6Class("PrevPdfExt",
                    inherit=PrevPdf,
                    public=list(
                      apply_sampling_schedule = function(N_samp, alpha = NULL, beta = NULL, rho = NULL, r = NULL, deltaT = NULL, p_no_intro = NULL) {
@@ -135,7 +132,7 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                          )
                        }
                        
-                       prev_df <- lapply(seq_along(self$f_posterior_list), function(i) make_df(i, pi_seq)) %>% bind_rows()
+                       prev_df <- dplyr::bind_rows(lapply(seq_along(self$f_posterior_list), function(i) make_df(i, pi_seq)))
                        
                        prev_df
                      },
@@ -143,15 +140,15 @@ PrevPdfExt <- R6Class("PrevPdfExt",
                      prevalence_pdf_seq_animation = function() {
                        prev_df <- self$prevalence_pdf_seq_df()
                        
-                       p <- ggplot(prev_df, aes(x = value, y = density, group = time)) +
-                         geom_line() +
-                         labs(title = 'Time: {frame_time}') +
-                         transition_time(time) + theme_minimal() + 
-                         labs(y = "Probability density", x = "Prevalence") + 
-                         scale_y_continuous(limits = c(0, 1))
+                       p <- ggplot2::ggplot(prev_df, ggplot2::aes(x = value, y = density, group = time)) +
+                         ggplot2::geom_line() +
+                         ggplot2::labs(title = 'Time: {frame_time}') +
+                         gganimate::transition_time(time) + ggplot2::theme_minimal() + 
+                         ggplot2::labs(y = "Probability density", x = "Prevalence") + 
+                         ggplot2::scale_y_continuous(limits = c(0, 1))
                        
                        # Animate the plot
-                       anim <- animate(p, nframes = length(self$f_posterior_list), renderer = gifski_renderer())
+                       anim <- gganimate::animate(p, nframes = length(self$f_posterior_list), renderer = gifski::gifski_renderer())
                        anim
                      },
                      

@@ -1,6 +1,3 @@
-source("R/is_valid_length.R")
-source("R/prevpdf.R")
-
 #' Compute the sample size requirements to meet a specified design
 #' threshold at a specified confidence.
 #' 
