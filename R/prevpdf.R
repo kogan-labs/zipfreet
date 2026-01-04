@@ -301,24 +301,34 @@ PrevPdf <- R6Class("PrevPdf",
                      # NOTE that all parameters up to "n_steps" must be vectors
                      # of length n_steps. 
                      # !!!! No input validation is done at this stage !!!!
-                     compute_sample_size = function(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method, n_max = 1000) {
+                     compute_sample_size = function(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method, n_max = 1000, sampling_schedule = NULL) {
+                       # If sampling_schedule not provided, sample at every timestep
+                       if (is.null(sampling_schedule)) {
+                         sampling_schedule <- rep(TRUE, n_steps)
+                       }
+
                        n_required <- rep(NA, n_steps)
                        p_eff_freedom_prior <- rep(NA, n_steps)
                        p_eff_freedom_post  <- rep(NA, n_steps)
                        sensitivity <- rep(NA, n_steps)
                        for (j in 1:n_steps)
                        {
-                         threshold_quantile <- dconf[j]
-                         if (method == "maintain") {
-                           if(pi[j] == 0)
-                             pintro_above <- p_intro[j]
-                           else {
-                             f_intro <- self$f_pi_pos(alpha_intro[j], beta_intro[j], 1-p_intro[j])
-                             pintro_above <- private$integrate_(f_intro, pi[j], 1)
+                         # If not sampling at this timestep, force n = 0
+                         if (!sampling_schedule[j]) {
+                           n_required[j] <- 0
+                         } else {
+                           threshold_quantile <- dconf[j]
+                           if (method == "maintain") {
+                             if(pi[j] == 0)
+                               pintro_above <- p_intro[j]
+                             else {
+                               f_intro <- self$f_pi_pos(alpha_intro[j], beta_intro[j], 1-p_intro[j])
+                               pintro_above <- private$integrate_(f_intro, pi[j], 1)
+                             }
+                             threshold_quantile <- min(c(0.999, threshold_quantile / (1 - pintro_above)))
                            }
-                           threshold_quantile <- min(c(0.999, threshold_quantile / (1 - pintro_above)))
+                           n_required[j] <- self$n_from_cdf(threshold_quantile, pi[j], rho[j], n_max)
                          }
-                         n_required[j] <- self$n_from_cdf(threshold_quantile, pi[j], rho[j], n_max)
                          self$update(n_required[j], alpha_intro[j], beta_intro[j], rho[j], growth_rate[j], delta_t[j], 1 - p_intro[j])
                          p_eff_freedom_prior[j] <- self$compute_cdf(pi[j], step=j, prior=T)
                          p_eff_freedom_post[j] <- self$compute_cdf(pi[j], step=j)
