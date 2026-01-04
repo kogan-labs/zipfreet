@@ -272,3 +272,193 @@ test_that("compute_sample_size probabilities are valid", {
   expect_true(all(result$p_freedom_post >= 0 & result$p_freedom_post <= 1))
   expect_true(all(result$sensitivity >= 0 & result$sensitivity <= 1))
 })
+
+# Tests for sampling_schedule parameter
+
+test_that("sampling_schedule forces n=0 at specified timesteps", {
+  result <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 5,
+    sampling_schedule = c(TRUE, FALSE, TRUE, FALSE, TRUE)
+  )
+
+  expect_s3_class(result, "zipfreet")
+  expect_length(result$n, 5)
+
+  # Timesteps 2 and 4 should have n = 0
+  expect_equal(result$n[2], 0)
+  expect_equal(result$n[4], 0)
+
+  # Timesteps 1, 3, and 5 should have n > 0 (computed sample sizes)
+  expect_gt(result$n[1], 0)
+  expect_gt(result$n[3], 0)
+  expect_gt(result$n[5], 0)
+})
+
+test_that("sampling_schedule with all TRUE behaves like default", {
+  result_default <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 3
+  )
+
+  result_explicit <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 3,
+    sampling_schedule = c(TRUE, TRUE, TRUE)
+  )
+
+  # Results should be identical
+  expect_equal(result_default$n, result_explicit$n)
+  expect_equal(result_default$p_freedom_post, result_explicit$p_freedom_post)
+})
+
+test_that("sampling_schedule accepts numeric 0/1 values", {
+  result <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 3,
+    sampling_schedule = c(1, 0, 1)  # Numeric instead of logical
+  )
+
+  expect_s3_class(result, "zipfreet")
+  expect_equal(result$n[2], 0)
+  expect_gt(result$n[1], 0)
+  expect_gt(result$n[3], 0)
+})
+
+test_that("sampling_schedule errors on length mismatch", {
+  expect_error(
+    compute_sample_size(
+      phi_prior = 0.5,
+      alpha_prior = 1,
+      beta_prior = 8,
+      alpha_intro = 1,
+      beta_intro = 1,
+      p_intro = 0.03,
+      growth_rate = 0.1,
+      rho = 0.9,
+      pi = 0,
+      dconf = 0.95,
+      n_steps = 5,
+      sampling_schedule = c(TRUE, FALSE, TRUE)  # Length 3, but n_steps = 5
+    ),
+    "sampling_schedule must have length"
+  )
+})
+
+test_that("sampling_schedule errors on invalid values", {
+  expect_error(
+    compute_sample_size(
+      phi_prior = 0.5,
+      alpha_prior = 1,
+      beta_prior = 8,
+      alpha_intro = 1,
+      beta_intro = 1,
+      p_intro = 0.03,
+      growth_rate = 0.1,
+      rho = 0.9,
+      pi = 0,
+      dconf = 0.95,
+      n_steps = 3,
+      sampling_schedule = c(1, 2, 1)  # Invalid value 2
+    ),
+    "sampling_schedule must be a logical vector"
+  )
+})
+
+test_that("sampling_schedule with skip at start still computes correctly", {
+  result <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 3,
+    sampling_schedule = c(FALSE, TRUE, TRUE)
+  )
+
+  expect_equal(result$n[1], 0)
+  expect_gt(result$n[2], 0)
+  expect_gt(result$n[3], 0)
+})
+
+test_that("sampling_schedule with all FALSE returns all zeros", {
+  result <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 3,
+    sampling_schedule = c(FALSE, FALSE, FALSE)
+  )
+
+  expect_equal(result$n, c(0, 0, 0))
+})
+
+test_that("sampling_schedule works with maintain method", {
+  result <- compute_sample_size(
+    phi_prior = 0.5,
+    alpha_prior = 1,
+    beta_prior = 8,
+    alpha_intro = 1,
+    beta_intro = 1,
+    p_intro = 0.03,
+    growth_rate = 0.1,
+    rho = 0.9,
+    pi = 0,
+    dconf = 0.95,
+    n_steps = 5,
+    method = "maintain",
+    sampling_schedule = c(TRUE, FALSE, TRUE, FALSE, TRUE)
+  )
+
+  expect_s3_class(result, "zipfreet")
+  expect_equal(result$n[2], 0)
+  expect_equal(result$n[4], 0)
+})

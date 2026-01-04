@@ -21,13 +21,22 @@ source("R/prevpdf.R")
 #' @param method  "restore" or "maintain"
 #' @param pi_seq discretization granularity
 #' @param n_max maximum sample size
+#' @param sampling_schedule optional logical vector of length n_steps indicating
+#'        which timesteps should have sampling. TRUE means compute the required
+#'        sample size, FALSE forces sample size to 0. If NULL (default), sampling
+#'        occurs at every timestep.
 #' @returns "zipfreet" structure including sample sizes and prior/posterior distributions
 #' @examples
 #' u <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95, n_steps=5)
 #' print(u)
 #' plot(u)
+#'
+#' # Sample only at timesteps 1, 3, and 5 (skip 2 and 4)
+#' u2 <- compute_sample_size(0.5, 1, 1, 1, 1, 0.04, 0.01, 0.9, 0, 0.95,
+#'                           n_steps=5, sampling_schedule=c(TRUE, FALSE, TRUE, FALSE, TRUE))
+#' print(u2)
 #' @export
-compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000, n_max = 1000)
+compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t=1, n_steps=1, method="restore", pi_seq=1000, n_max = 1000, sampling_schedule = NULL)
 {
   # phi_prior must be length 1
   if (length(phi_prior) > 1)
@@ -77,7 +86,19 @@ compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro,
   if (!is_valid_length(pi, 1, n_steps)) stop(simpleError("Vector length mismatch: 'pi'"))
   if (!is_valid_length(growth_rate, 1, n_steps)) stop(simpleError("Vector length mismatch: 'growth_rate'"))
   if (!is_valid_length(delta_t, 1, n_steps)) stop(simpleError("Vector length mismatch: 'delta_t'"))
-  
+
+  # validate sampling_schedule if provided
+  if (!is.null(sampling_schedule)) {
+    if (length(sampling_schedule) != n_steps) {
+      stop(simpleError(paste0("sampling_schedule must have length ", n_steps, " (matching n_steps)")))
+    }
+    if (!is.logical(sampling_schedule) && !all(sampling_schedule %in% c(0, 1))) {
+      stop(simpleError("sampling_schedule must be a logical vector or contain only 0/1 values"))
+    }
+    # Convert to logical if numeric
+    sampling_schedule <- as.logical(sampling_schedule)
+  }
+
   # make all vectors the same length (matching number of steps)
   if (length(alpha_intro) < n_steps) alpha_intro <- rep(alpha_intro, n_steps)
   if (length(beta_intro) < n_steps) beta_intro <- rep(beta_intro, n_steps)
@@ -96,7 +117,7 @@ compute_sample_size <- function(phi_prior, alpha_prior, beta_prior, alpha_intro,
     pi_seq = seq(1e-6, 1-1e-6,, length.out=pi_seq)
   )
   
-  result <- prevpdf$compute_sample_size(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method, n_max)
+  result <- prevpdf$compute_sample_size(alpha_intro, beta_intro, p_intro, growth_rate, rho, pi, dconf, delta_t, n_steps, method, n_max, sampling_schedule)
   
   return( result )
 }
