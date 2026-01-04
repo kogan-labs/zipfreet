@@ -1,6 +1,4 @@
-library(testthat)
-library(here)
-context("Testing PrevPdf Class")
+# Tests for PrevPdf and PrevPdfExt classes (internal R6 classes)
 
 test_that("Correct phi_post values over 3 time points", {
   prevpdf_test <- PrevPdfExt$new(
@@ -92,6 +90,4 @@ test_that("Special Case: Unit sensitivity, no growth, alpha=1", {
 
   # Compare phi_post to expected value
   expect_equal(prevpdf_test$phi_post, expected_phi_post)
-
 })
-

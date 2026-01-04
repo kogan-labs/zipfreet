@@ -16,4 +16,8 @@ Imports:
   gganimate,
   gifski,
   lifecycle
+Suggests:
+  testthat (>= 3.0.0),
+  here
+Config/testthat/edition: 3
 RoxygenNote: 7.3.2
