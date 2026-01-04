@@ -1,6 +1,5 @@
-library(R6)
-
-PrevPdf <- R6Class("PrevPdf",
+#' @importFrom R6 R6Class
+PrevPdf <- R6::R6Class("PrevPdf",
                    public = list(
                      ts = NULL,
                      N = NULL,
