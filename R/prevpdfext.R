@@ -1,8 +1,7 @@
 #' @importFrom R6 R6Class
 #' @importFrom dplyr bind_rows
 #' @importFrom ggplot2 ggplot aes geom_line
-#' @importFrom gganimate transition_time animate
-#' @importFrom gifski gifski_renderer
+#' @importFrom gganimate transition_time animate gifski_renderer
 PrevPdfExt <- R6::R6Class("PrevPdfExt",
                    inherit=PrevPdf,
                    public=list(
@@ -148,7 +147,7 @@ PrevPdfExt <- R6::R6Class("PrevPdfExt",
                          ggplot2::scale_y_continuous(limits = c(0, 1))
                        
                        # Animate the plot
-                       anim <- gganimate::animate(p, nframes = length(self$f_posterior_list), renderer = gifski::gifski_renderer())
+                       anim <- gganimate::animate(p, nframes = length(self$f_posterior_list), renderer = gganimate::gifski_renderer())
                        anim
                      },
                      
